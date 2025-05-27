@@ -1,7 +1,7 @@
 ---
 - name: Check available package updates on Linux systems
   hosts: all
-  gather_facts: yes 
+  gather_facts: yes
   become: yes
 
   tasks:
@@ -10,22 +10,9 @@
       register: update_output
       changed_when: false
       failed_when: update_output.rc not in [0, 100]
-      become: yes
-
+      when: ansible_facts['os_family'] == "RedHat"
 
     - name: Show available updates (RHEL/CentOS)
       ansible.builtin.debug:
-        var: yum_updates.stdout_lines
+        var: update_output.stdout_lines
       when: ansible_facts['os_family'] == "RedHat"
-
-    - name: Check for available updates (Ubuntu/Debian)
-      ansible.builtin.shell: apt list --upgradable
-      register: apt_updates
-      changed_when: false
-      when: ansible_facts['os_family'] == "Debian"
-
-    - name: Show available updates (Ubuntu/Debian)
-      ansible.builtin.debug:
-        var: apt_updates.stdout_lines
-      when: ansible_facts['os_family'] == "Debian"
-
