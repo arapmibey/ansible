@@ -6,10 +6,12 @@
 
   tasks:
     - name: Check for available updates (RHEL/CentOS)
-      ansible.builtin.shell: yum check-update
-      register: yum_updates
+      command: yum check-update
+      register: update_output
       changed_when: false
-      when: ansible_facts['os_family'] == "RedHat"
+      failed_when: update_output.rc not in [0, 100]
+      become: yes
+
 
     - name: Show available updates (RHEL/CentOS)
       ansible.builtin.debug:
