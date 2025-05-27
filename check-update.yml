@@ -1,18 +1,22 @@
 ---
-- name: Check available package updates on Linux systems
+- name: Show pending package updates on RHEL-based systems
   hosts: all
   gather_facts: yes
   become: yes
 
   tasks:
-    - name: Check for available updates (RHEL/CentOS)
-      command: yum check-update
-      register: update_output
-      changed_when: false
-      failed_when: update_output.rc not in [0, 100]
-      when: ansible_facts['os_family'] == "RedHat"
 
-    - name: Show available updates (RHEL/CentOS)
-      ansible.builtin.debug:
-        var: update_output.stdout_lines
+    - name: Check for available updates (using yum or dnf)
+      block:
+        - name: Run check-update on RHEL-based system
+          command: >
+            {{ 'dnf' if ansible_facts['distribution_major_version'] is version('8', '>=') else 'yum' }}
+            check-update
+          register: update_output
+          changed_when: false
+          failed_when: update_output.rc not in [0, 100]
+
+        - name: Print list of available updates
+          debug:
+            msg: "{{ update_output.stdout_lines | default(['No updates available']) }}"
       when: ansible_facts['os_family'] == "RedHat"
