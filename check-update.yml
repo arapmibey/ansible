@@ -2,6 +2,7 @@
 - name: Check available package updates on Linux systems
   hosts: all
   gather_facts: yes 
+  become: yes
 
   tasks:
     - name: Check for available updates (RHEL/CentOS)
