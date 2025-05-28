@@ -1,0 +1,15 @@
+- name: Create a user account on the target host
+  hosts: ansible1
+  become: true                          # Run tasks with elevated privileges
+  vars:
+    username: anna                      # The username to be created
+    user_fullname: "Anna Smith"         # The full name of the user
+
+  tasks:
+    - name: Ensure the user '{{ username }}' exists
+      ansible.builtin.user:
+        name: "{{ username }}"          # Username for the new user
+        state: present                  # Ensure the user is present
+        shell: /bin/bash                # Default shell
+        create_home: yes               # Create home directory
+        comment: "{{ user_fullname }}"  # Full name as a comment
