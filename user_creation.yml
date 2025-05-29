@@ -1,5 +1,5 @@
 - name: Create a user account on the target host
-  hosts: ansible1
+  hosts: all
   become: true                          # Run tasks with elevated privileges
   vars:
     username: anna                      # The username to be created
