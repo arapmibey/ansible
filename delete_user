@@ -1,6 +1,6 @@
 ---
 - name: Delete a user from the system
-  hosts: target_hosts          # Replace with your target host or group
+  hosts: all          # Replace with your target host or group
   become: true                 # Ensure the task runs with root privileges
   vars:
     username: anna             # Username to be deleted
