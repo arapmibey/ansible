@@ -15,22 +15,23 @@
   become: yes
   gather_facts: yes
   vars:
-    new_username: "{{ user_name | default('ansibleuser') }}"
     user_shell: "/bin/bash"
+    user_comment: "{{ full_name }} - {{ user_dept }}"
   tasks:
     - name: Ping host
       ping:
 
-    - name: Create user on remote host
+    - name: Create user with comment
       user:
-        name: "{{ new_username }}"
+        name: "{{ user_name }}"
         shell: "{{ user_shell }}"
+        comment: "{{ user_comment }}"
         state: present
 
     - name: Ensure user has a home directory
       file:
-        path: "/home/{{ new_username }}"
+        path: "/home/{{ user_name }}"
         state: directory
-        owner: "{{ new_username }}"
-        group: "{{ new_username }}"
+        owner: "{{ user_name }}"
+        group: "{{ user_name }}"
         mode: '0755'
