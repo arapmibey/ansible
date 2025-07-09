@@ -1,39 +1,37 @@
 - name: Build dynamic inventory from input
   hosts: localhost
-  gather_facts: false
+  gather_facts: no
   vars:
     myhosts: "{{ target_hosts.split(',') }}"
   tasks:
     - name: Add input hosts to dynamic group
       add_host:
-        name: "{{ item | trim }}"
+        name: "{{ item }}"
         groups: dynamic_targets
       loop: "{{ myhosts }}"
 
-- name: Create user on dynamic hosts (with optional group and comment)
+- name: Run tasks on dynamic hosts
   hosts: dynamic_targets
-  become: true
-  gather_facts: false
+  become: yes
+  gather_facts: yes
   vars:
-    new_username: "{{ user_name }}"
-    # Combine Full Name and Department into the comment field
-    user_comment: "{{ full_name | default('') }} - {{ department | default('') }}"
-    extra_group: "{{ additional_group | default('') }}"
+    user_shell: "/bin/bash"
+    user_comment: "{{ full_name }} - {{ user_dept }}"
   tasks:
-    - name: Create user and add to extra group if specified
+    - name: Ping host
+      ping:
+
+    - name: Create user with comment
       user:
-        name: "{{ new_username }}"
-        shell: /bin/bash
+        name: "{{ user_name }}"
+        shell: "{{ user_shell }}"
         comment: "{{ user_comment }}"
-        # Only pass 'groups' when extra_group is non-empty
-        groups: "{{ extra_group if extra_group != '' else omit }}"
-        append: yes
         state: present
 
-    - name: Ensure home directory exists
+    - name: Ensure user has a home directory
       file:
-        path: "/home/{{ new_username }}"
+        path: "/home/{{ user_name }}"
         state: directory
-        owner: "{{ new_username }}"
-        group: "{{ new_username }}"
+        owner: "{{ user_name }}"
+        group: "{{ user_name }}"
         mode: '0755'
