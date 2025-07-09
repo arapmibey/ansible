@@ -17,9 +17,10 @@
   vars:
     delete_users: "{{ user_name.split(',') }}"
   tasks:
-    - name: Delete each user if present
+    - name: Delete each user if present (force removal of mail spool)
       user:
         name: "{{ item | trim }}"
         state: absent
-        remove: yes       # also removes home dir and mail spool
+        remove: yes      # removes home dir + mail spool
+        force: yes       # forces removal even if ownership mismatch
       loop: "{{ delete_users }}"
