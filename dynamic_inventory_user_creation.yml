@@ -1,43 +1,28 @@
-- name: Run tasks on dynamic hosts
-  hosts: dynamic_targets
-  become: yes
-  gather_facts: yes
+- name: Create dynamic hosts and delete users
+  hosts: localhost
+  gather_facts: no
   vars:
-    user_shell: "/bin/bash"
-    user_comment: "{{ full_name }} - {{ user_dept }}"
+    myhosts: "{{ target_hosts.split(',') }}"
+    delete_users: "{{ user_name.split(',') }}"
   tasks:
 
-    - name: Ping host
-      ping:
+    - name: Add input hosts to dynamic group
+      add_host:
+        name: "{{ item | trim }}"
+        groups: dynamic_targets
+      loop: "{{ myhosts }}"
 
-    - name: Check if additional group exists
-      getent:
-        database: group
-        key: "{{ extra_group }}"
-      register: group_check
-      when: extra_group is defined and extra_group | length > 0
+- name: Delete users on dynamic hosts
+  hosts: dynamic_targets
+  become: yes
+  gather_facts: no
+  vars:
+    delete_users: "{{ user_name.split(',') }}"
+  tasks:
 
-    - name: Fail if additional group does not exist
-      fail:
-        msg: "Group '{{ extra_group }}' does not exist on host {{ inventory_hostname }}"
-      when:
-        - extra_group is defined
-        - extra_group | length > 0
-        - not group_check.found
-
-    - name: Create user with comment and optional group
+    - name: Ensure users are absent
       user:
-        name: "{{ user_name }}"
-        shell: "{{ user_shell }}"
-        comment: "{{ user_comment }}"
-        groups: "{{ extra_group if extra_group is defined and extra_group | length > 0 else omit }}"
-        append: yes
-        state: present
-
-    - name: Ensure user has a home directory
-      file:
-        path: "/home/{{ user_name }}"
-        state: directory
-        owner: "{{ user_name }}"
-        group: "{{ user_name }}"
-        mode: '0755'
+        name: "{{ item | trim }}"
+        state: absent
+        remove: yes
+      loop: "{{ delete_users }}"
