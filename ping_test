@@ -1,0 +1,19 @@
+# dynamic_inventory_playbook.yml
+- name: Build dynamic inventory from input
+  hosts: localhost
+  gather_facts: no
+  vars:
+    myhosts: "{{ target_hosts.split(',') }}"
+  tasks:
+    - name: Add input hosts to dynamic group
+      add_host:
+        name: "{{ item }}"
+        groups: dynamic_targets
+      loop: "{{ myhosts }}"
+
+- name: Run tasks on dynamic hosts
+  hosts: dynamic_targets
+  gather_facts: yes
+  tasks:
+    - name: Ping host
+      ping:
