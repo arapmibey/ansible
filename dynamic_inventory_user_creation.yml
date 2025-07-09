@@ -36,4 +36,8 @@
 
     - name: Ensure home directory exists
       file:
-        path: "
+        path: "/home/{{ new_username }}"
+        state: directory
+        owner: "{{ new_username }}"
+        group: "{{ new_username }}"
+        mode: '0755'
