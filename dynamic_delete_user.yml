@@ -6,19 +6,20 @@
   tasks:
     - name: Add input hosts to dynamic group
       add_host:
-        name: "{{ item }}"
+        name: "{{ item | trim }}"
         groups: dynamic_targets
       loop: "{{ myhosts }}"
 
-- name: Delete user on dynamic hosts
+- name: Delete users on dynamic hosts
   hosts: dynamic_targets
   become: yes
   gather_facts: no
   vars:
-    delete_username: "{{ user_name }}"
+    delete_users: "{{ user_name.split(',') }}"
   tasks:
-    - name: Ensure user is absent
+    - name: Ensure users are absent
       user:
-        name: "{{ delete_username }}"
+        name: "{{ item | trim }}"
         state: absent
-        remove: yes  # Deletes home dir and mail spool
+        remove: yes
+      loop: "{{ delete_users }}"
