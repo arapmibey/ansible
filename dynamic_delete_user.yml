@@ -17,9 +17,9 @@
   vars:
     delete_users: "{{ user_name.split(',') }}"
   tasks:
-    - name: Ensure users are absent
+    - name: Delete each user if present
       user:
         name: "{{ item | trim }}"
         state: absent
-        remove: yes
+        remove: yes       # also removes home dir and mail spool
       loop: "{{ delete_users }}"
