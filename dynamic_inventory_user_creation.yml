@@ -10,7 +10,7 @@
         groups: dynamic_targets
       loop: "{{ myhosts }}"
 
-- name: Create user on dynamic hosts
+- name: Create user on remote host (with/without extra group)
   hosts: dynamic_targets
   become: true
   gather_facts: false
@@ -19,20 +19,23 @@
     user_comment: "{{ full_name | default('') }} {{ department | default('') }}"
     extra_group: "{{ additional_group | default('') }}"
   tasks:
-    - name: Ensure optional group exists if specified
-      group:
-        name: "{{ extra_group }}"
-        state: present
-      when: extra_group != ""
-
-    - name: Create user on remote host
+    - name: Create user when an extra group is specified
       user:
         name: "{{ new_username }}"
         shell: /bin/bash
         comment: "{{ user_comment }}"
-        groups: "{{ extra_group if extra_group != '' else omit }}"
+        groups: "{{ extra_group }}"
         append: yes
         state: present
+      when: extra_group != ""
+
+    - name: Create user when no extra group is specified
+      user:
+        name: "{{ new_username }}"
+        shell: /bin/bash
+        comment: "{{ user_comment }}"
+        state: present
+      when: extra_group == ""
 
     - name: Ensure home directory exists
       file:
