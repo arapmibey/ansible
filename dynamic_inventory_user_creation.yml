@@ -1,28 +1,40 @@
-- name: Create dynamic hosts and delete users
+- name: Build dynamic inventory from input
   hosts: localhost
   gather_facts: no
   vars:
     myhosts: "{{ target_hosts.split(',') }}"
-    delete_users: "{{ user_name.split(',') }}"
   tasks:
-
     - name: Add input hosts to dynamic group
       add_host:
         name: "{{ item | trim }}"
         groups: dynamic_targets
       loop: "{{ myhosts }}"
 
-- name: Delete users on dynamic hosts
+- name: Create users on dynamic hosts
   hosts: dynamic_targets
   become: yes
   gather_facts: no
   vars:
-    delete_users: "{{ user_name.split(',') }}"
+    new_users: "{{ user_name.split(',') }}"
+    user_shell: "/bin/bash"
+    user_comment: "{{ full_name | default('') }} - {{ department | default('') }}"
   tasks:
 
-    - name: Ensure users are absent
+    - name: Check if extra group exists (optional)
+      command: "getent group {{ extra_group }}"
+      register: group_check
+      failed_when: false
+      changed_when: false
+      when: extra_group is defined and extra_group | length > 0
+
+    - name: Set group_exists fact
+      set_fact:
+        group_exists: "{{ group_check.rc == 0 }}"
+      when: extra_group is defined and extra_group | length > 0
+
+    - name: Create user(s)
       user:
         name: "{{ item | trim }}"
-        state: absent
-        remove: yes
-      loop: "{{ delete_users }}"
+        shell: "{{ user_shell }}"
+        comment: "{{ user_comment }}"
+        gro
