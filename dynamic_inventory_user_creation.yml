@@ -1,0 +1,36 @@
+- name: Build dynamic inventory from input
+  hosts: localhost
+  gather_facts: no
+  vars:
+    myhosts: "{{ target_hosts.split(',') }}"
+  tasks:
+    - name: Add input hosts to dynamic group
+      add_host:
+        name: "{{ item }}"
+        groups: dynamic_targets
+      loop: "{{ myhosts }}"
+
+- name: Run tasks on dynamic hosts
+  hosts: dynamic_targets
+  become: yes
+  gather_facts: yes
+  vars:
+    new_username: "{{ user_name | default('ansibleuser') }}"
+    user_shell: "/bin/bash"
+  tasks:
+    - name: Ping host
+      ping:
+
+    - name: Create user on remote host
+      user:
+        name: "{{ new_username }}"
+        shell: "{{ user_shell }}"
+        state: present
+
+    - name: Ensure user has a home directory
+      file:
+        path: "/home/{{ new_username }}"
+        state: directory
+        owner: "{{ new_username }}"
+        group: "{{ new_username }}"
+        mode: '0755'
