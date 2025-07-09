@@ -1,15 +1,3 @@
-- name: Build dynamic inventory from input
-  hosts: localhost
-  gather_facts: no
-  vars:
-    myhosts: "{{ target_hosts.split(',') }}"
-  tasks:
-    - name: Add input hosts to dynamic group
-      add_host:
-        name: "{{ item | trim }}"
-        groups: dynamic_targets
-      loop: "{{ myhosts }}"
-
 - name: Create users on dynamic hosts
   hosts: dynamic_targets
   become: yes
@@ -37,4 +25,7 @@
         name: "{{ item | trim }}"
         shell: "{{ user_shell }}"
         comment: "{{ user_comment }}"
-        gro
+        groups: "{{ extra_group if (extra_group is defined and group_exists) else omit }}"
+        append: yes
+        state: present
+      loop: "{{ new_users }}"
