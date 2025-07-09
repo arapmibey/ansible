@@ -1,31 +1,39 @@
-- name: Create users on dynamic hosts
-  hosts: dynamic_targets
-  become: yes
-  gather_facts: no
+- name: Build dynamic inventory from input
+  hosts: localhost
+  gather_facts: false
   vars:
-    new_users: "{{ user_name.split(',') }}"
-    user_shell: "/bin/bash"
-    user_comment: "{{ full_name | default('') }} - {{ department | default('') }}"
+    myhosts: "{{ target_hosts.split(',') }}"
   tasks:
-
-    - name: Check if extra group exists (optional)
-      command: "getent group {{ extra_group }}"
-      register: group_check
-      failed_when: false
-      changed_when: false
-      when: extra_group is defined and extra_group | length > 0
-
-    - name: Set group_exists fact
-      set_fact:
-        group_exists: "{{ group_check.rc == 0 }}"
-      when: extra_group is defined and extra_group | length > 0
-
-    - name: Create user(s)
-      user:
+    - name: Add input hosts to dynamic group
+      add_host:
         name: "{{ item | trim }}"
-        shell: "{{ user_shell }}"
+        groups: dynamic_targets
+      loop: "{{ myhosts }}"
+
+- name: Create user on dynamic hosts
+  hosts: dynamic_targets
+  become: true
+  gather_facts: false
+  vars:
+    new_username: "{{ user_name }}"
+    user_comment: "{{ full_name | default('') }} {{ department | default('') }}"
+    extra_group: "{{ additional_group | default('') }}"
+  tasks:
+    - name: Ensure optional group exists if specified
+      group:
+        name: "{{ extra_group }}"
+        state: present
+      when: extra_group != ""
+
+    - name: Create user on remote host
+      user:
+        name: "{{ new_username }}"
+        shell: /bin/bash
         comment: "{{ user_comment }}"
-        groups: "{{ extra_group if (extra_group is defined and group_exists) else omit }}"
+        groups: "{{ extra_group if extra_group != '' else omit }}"
         append: yes
         state: present
-      loop: "{{ new_users }}"
+
+    - name: Ensure home directory exists
+      file:
+        path: "
