@@ -1,15 +1,3 @@
-- name: Build dynamic inventory from input
-  hosts: localhost
-  gather_facts: no
-  vars:
-    myhosts: "{{ target_hosts.split(',') }}"
-  tasks:
-    - name: Add input hosts to dynamic group
-      add_host:
-        name: "{{ item }}"
-        groups: dynamic_targets
-      loop: "{{ myhosts }}"
-
 - name: Run tasks on dynamic hosts
   hosts: dynamic_targets
   become: yes
@@ -18,14 +6,32 @@
     user_shell: "/bin/bash"
     user_comment: "{{ full_name }} - {{ user_dept }}"
   tasks:
+
     - name: Ping host
       ping:
 
-    - name: Create user with comment
+    - name: Check if additional group exists
+      getent:
+        database: group
+        key: "{{ extra_group }}"
+      register: group_check
+      when: extra_group is defined and extra_group | length > 0
+
+    - name: Fail if additional group does not exist
+      fail:
+        msg: "Group '{{ extra_group }}' does not exist on host {{ inventory_hostname }}"
+      when:
+        - extra_group is defined
+        - extra_group | length > 0
+        - not group_check.found
+
+    - name: Create user with comment and optional group
       user:
         name: "{{ user_name }}"
         shell: "{{ user_shell }}"
         comment: "{{ user_comment }}"
+        groups: "{{ extra_group if extra_group is defined and extra_group | length > 0 else omit }}"
+        append: yes
         state: present
 
     - name: Ensure user has a home directory
