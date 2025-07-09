@@ -6,7 +6,7 @@
   tasks:
     - name: Add input hosts to dynamic group
       add_host:
-        name: "{{ item }}"
+        name: "{{ item | trim }}"
         groups: dynamic_targets
       loop: "{{ myhosts }}"
 
@@ -17,15 +17,18 @@
   vars:
     user_shell: "/bin/bash"
     user_comment: "{{ full_name }} - {{ user_dept }}"
+    extra_group: "{{ additional_group | default('') }}"
   tasks:
     - name: Ping host
       ping:
 
-    - name: Create user with comment
+    - name: Create user with comment and optional group
       user:
         name: "{{ user_name }}"
         shell: "{{ user_shell }}"
         comment: "{{ user_comment }}"
+        groups: "{{ extra_group if extra_group != '' else omit }}"
+        append: yes
         state: present
 
     - name: Ensure user has a home directory
